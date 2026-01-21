@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # 1. Your API Service
+  api-publisher:
+    build: ./api-publisher
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - GCP_PROJECT_ID=test-project
+      - PUBSUB_TOPIC_ID=user-activity-events
+      # This tells the Google Client to talk to the local emulator instead of the real cloud
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+    depends_on:
+      - pubsub-emulator
+    networks:
+      - backend-network
+
+  # 2. Local Google Pub/Sub Emulator
+  pubsub-emulator:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    # Start the emulator on port 8085
+    command: gcloud beta emulators pubsub start --project=test-project --host-port=0.0.0.0:8085
+    ports:
+      - "8085:8085"
+    networks:
+      - backend-network
+
+  # 3. MongoDB (Database)
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - backend-network
+
+networks:
+  backend-network:
+
+volumes:
+  mongo-data:
