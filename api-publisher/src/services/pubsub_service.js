@@ -1,9 +1,13 @@
 const { PubSub } = require("@google-cloud/pubsub");
+const { GoogleAuth } = require("google-auth-library");
 
-// Initialize the Pub/Sub client
-// If PUBSUB_EMULATOR_HOST is set in docker-compose, this client automatically uses it.
+const auth = new GoogleAuth({
+    scopes: ["https://www.googleapis.com/auth/pubsub"],
+});
+
 const pubsub = new PubSub({
-    projectId: process.env.GCP_PROJECT_ID || "test-project",
+    projectId: process.env.GCP_PROJECT_ID,
+    auth,
 });
 
 /**
@@ -14,7 +18,9 @@ const pubsub = new PubSub({
 async function publishMessage(topicName, data) {
     try {
         // 1. Get a reference to the topic
-        const topic = pubsub.topic(topicName);
+        //const topic = pubsub.topic(topicName);
+        const topic = pubsub.topic(`projects/${process.env.GCP_PROJECT_ID}/topics/${topicName}`);
+
 
         // 2. Pub/Sub requires the data to be a Buffer (binary), not raw JSON
         const dataBuffer = Buffer.from(JSON.stringify(data));
@@ -26,9 +32,10 @@ async function publishMessage(topicName, data) {
         console.log(`Message ${messageId} published to topic ${topicName}`);
         return messageId;
     } catch (error) {
-        console.error(`Error publishing to ${topicName}:`, error);
-        throw error; // Re-throw so the API route knows something went wrong
+        console.error("PUBSUB ERROR >>>", error);
+        throw error;
     }
+
 }
 
 module.exports = { publishMessage };

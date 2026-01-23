@@ -350,9 +350,3 @@ npm install
 npm test
 
 ```
-
-
-
-The tests use in-memory mocks for external dependencies (Pub/Sub and MongoDB) to ensure fast and reliable execution without needing active connections.
-
-```
