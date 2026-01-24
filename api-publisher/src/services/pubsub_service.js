@@ -1,32 +1,28 @@
 const { PubSub } = require("@google-cloud/pubsub");
-const { GoogleAuth } = require("google-auth-library");
 
-const auth = new GoogleAuth({
-    scopes: ["https://www.googleapis.com/auth/pubsub"],
-});
+// 1. Initialize Pub/Sub Client
+// We use a fallback 'test-project' just in case the env var is missing locally
+const projectId = process.env.GCP_PROJECT_ID || 'test-project';
+const pubsub = new PubSub({ projectId });
 
-const pubsub = new PubSub({
-    projectId: process.env.GCP_PROJECT_ID,
-    auth,
-});
-
-/**
- * Publishes a message to a specific topic.
- * @param {string} topicName - The name of the topic (e.g., 'user-activity-events')
- * @param {object} data - The JSON data to send
- */
 async function publishMessage(topicName, data) {
     try {
-        // 1. Get a reference to the topic
-        //const topic = pubsub.topic(topicName);
-        const topic = pubsub.topic(`projects/${process.env.GCP_PROJECT_ID}/topics/${topicName}`);
+        console.log(`[DEBUG] Preparing to publish to topic: ${topicName}`);
+        
+        const topic = pubsub.topic(topicName);
 
+        // --- SELF-HEALING LOGIC ---
+        // Check if the topic exists. If not, create it automatically.
+        // This prevents "Topic Not Found" errors when the emulator resets.
+        const [exists] = await topic.exists();
+        if (!exists) {
+            console.log(`[DEBUG] Topic "${topicName}" not found. Creating it now...`);
+            await topic.create();
+            console.log(`[DEBUG] Topic "${topicName}" created successfully.`);
+        }
 
-        // 2. Pub/Sub requires the data to be a Buffer (binary), not raw JSON
+        // Publish the message
         const dataBuffer = Buffer.from(JSON.stringify(data));
-
-        // 3. Publish the message
-        // The client returns the message ID upon success
         const messageId = await topic.publishMessage({ data: dataBuffer });
 
         console.log(`Message ${messageId} published to topic ${topicName}`);
@@ -35,7 +31,6 @@ async function publishMessage(topicName, data) {
         console.error("PUBSUB ERROR >>>", error);
         throw error;
     }
-
 }
 
 module.exports = { publishMessage };
