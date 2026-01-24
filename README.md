@@ -350,3 +350,25 @@ npm install
 npm test
 
 ```
+
+## ✅ Verification Logs
+The following logs demonstrate successful local execution using Docker Compose and the Pub/Sub Emulator, confirming the system works as expected.
+
+**1. API Publisher (Self-Healing Topic Creation & Publishing):**
+> [DEBUG] Topic "user-activity-events" not found. Creating it now...
+> [DEBUG] Topic "user-activity-events" created successfully.
+> Message 1 published to topic user-activity-events
+
+**2. Cloud Function (Local Integration Test):**
+> --- Starting Local Test ---
+> Simulating push notification for user [test_user]...
+> --- Verification: Record found in MongoDB! ---
+> {
+>   eventId: 'unique-event-id-1769189946258',
+>   userId: 'test_user',
+>   eventType: 'signup',
+>   payload: { source: 'web' },
+>   status: 'processed',
+>   message: 'Simulating push notification for user [test_user] about event [signup]'
+> }
+
